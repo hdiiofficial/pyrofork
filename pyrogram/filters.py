@@ -19,20 +19,11 @@
 
 import inspect
 import re
-from typing import Callable, List, Pattern, Union
+from typing import Callable, Union, List, Pattern
 
 import pyrogram
 from pyrogram import enums
-from pyrogram.types import (
-    CallbackQuery,
-    InlineKeyboardMarkup,
-    InlineQuery,
-    Message,
-    PreCheckoutQuery,
-    ReplyKeyboardMarkup,
-    Story,
-    Update,
-)
+from pyrogram.types import Message, CallbackQuery, InlineQuery, InlineKeyboardMarkup, ReplyKeyboardMarkup, Update
 
 
 class Filter:
@@ -236,14 +227,12 @@ reply = create(reply_filter)
 """Filter messages that are replies to other messages."""
 
 
-# endregion
-
 # region reaction_filter
 async def reaction_filter(_, __, m: Message):
     return bool(m.edit_hide)
 
 
-react = create(reaction_filter)
+reaction = create(reaction_filter)
 """Filter reactions."""
 
 # endregion
@@ -700,17 +689,6 @@ video_chat_members_invited = create(video_chat_members_invited_filter)
 
 # endregion
 
-# region successful_payment_filter
-async def successful_payment_filter(_, __, m: Message):
-    return bool(m.successful_payment)
-
-
-successful_payment = create(successful_payment_filter)
-"""Filter messages for successful payments"""
-
-
-# endregion
-
 # region service_filter
 async def service_filter(_, __, m: Message):
     return bool(m.service)
@@ -722,7 +700,7 @@ service = create(service_filter)
 A service message contains any of the following fields set: *left_chat_member*,
 *new_chat_title*, *new_chat_photo*, *delete_chat_photo*, *group_chat_created*, *supergroup_chat_created*,
 *channel_chat_created*, *migrate_to_chat_id*, *migrate_from_chat_id*, *pinned_message*, *game_score*,
-*video_chat_started*, *video_chat_ended*, *video_chat_members_invited*, *successful_payment*, *successful_payment*.
+*video_chat_started*, *video_chat_ended*, *video_chat_members_invited*.
 """
 
 
@@ -776,67 +754,6 @@ linked_channel = create(linked_channel_filter)
 
 # endregion
 
-# region forum_topic_closed_filter
-async def forum_topic_closed_filter(_, __, m: Message):
-    return bool(m.forum_topic_closed)
-
-forum_topic_closed = create(forum_topic_closed_filter)
-"""Filter service message for closed forum topics"""
-
-
-# endregion
-
-# region forum_topic_created_filter
-async def forum_topic_created_filter(_, __, m: Message):
-    return bool(m.forum_topic_created)
-
-forum_topic_created = create(forum_topic_created_filter)
-"""Filter service message for created forum topics"""
-
-
-# endregion
-
-# region forum_topic_edited_filter
-async def forum_topic_edited_filter(_, __, m: Message):
-    return bool(m.forum_topic_edited)
-
-forum_topic_edited = create(forum_topic_edited_filter)
-"""Filter service message for edited forum topics"""
-
-
-# endregion
-
-
-# region forum_topic_reopened_filter
-async def forum_topic_reopened_filter(_, __, m: Message):
-    return bool(m.forum_topic_reopened)
-
-forum_topic_reopened = create(forum_topic_reopened_filter)
-"""Filter service message for reopened forum topics"""
-
-
-# endregion
-
-# region general_topic_hidden_filter
-async def general_topic_hidden_filter(_, __, m: Message):
-    return bool(m.general_topic_hidden)
-
-general_forum_topic_hidden = create(general_topic_hidden_filter)
-
-"""Filter service message for hidden general forum topics"""
-
-
-# endregion
-
-# region general_topic_unhidden_filter
-async def general_topic_unhidden_filter(_, __, m: Message):
-    return bool(m.general_topic_unhidden)
-
-general_forum_topic_unhidden = create(general_topic_unhidden_filter)
-"""Filter service message for unhidden general forum topics"""
-
-
-# endregion
 
 # region command_filter
 def command(commands: Union[str, List[str]], prefixes: Union[str, List[str]] = "/", case_sensitive: bool = False):
@@ -921,7 +838,6 @@ def regex(pattern: Union[str, Pattern], flags: int = 0):
     - :obj:`~pyrogram.types.Message`: The filter will match ``text`` or ``caption``.
     - :obj:`~pyrogram.types.CallbackQuery`: The filter will match ``data``.
     - :obj:`~pyrogram.types.InlineQuery`: The filter will match ``query``.
-    - :obj:`~pyrogram.types.PreCheckoutQuery`: The filter will match ``payload``.
 
     When a pattern matches, all the `Match Objects <https://docs.python.org/3/library/re.html#match-objects>`_ are
     stored in the ``matches`` field of the update object itself.
@@ -941,8 +857,6 @@ def regex(pattern: Union[str, Pattern], flags: int = 0):
             value = update.data
         elif isinstance(update, InlineQuery):
             value = update.query
-        elif isinstance(update, PreCheckoutQuery):
-            value = update.payload
         else:
             raise ValueError(f"Regex filter doesn't work with {type(update)}")
 
@@ -1013,55 +927,12 @@ class chat(Filter, set):
             else c for c in chats
         )
 
-    async def __call__(self, _, message: Union[Message, Story]):
-        if isinstance(message, Story):
-            return (
-                    message.sender_chat
-                    and (
-                        message.sender_chat.id in self
-                        or (
-                            message.sender_chat.username
-                            and message.sender_chat.username.lower() in self
-                        )
-                    )
-                ) or (
-                    message.from_user
-                    and (
-                        message.from_user.id in self
-                        or (
-                            message.from_user.username
-                            and message.from_user.username.lower() in self
-                        )
-                    )
-                )
-        else:
-            return (message.chat
-                    and (message.chat.id in self
-                         or (message.chat.username
-                             and message.chat.username.lower() in self)
-                         or ("me" in self
-                             and message.from_user
-                             and message.from_user.is_self
-                             and not message.outgoing)))
-
-
-# noinspection PyPep8Naming
-class topic(Filter, set):
-    """Filter messages coming from one or more topics.
-    You can use `set bound methods <https://docs.python.org/3/library/stdtypes.html#set>`_ to manipulate the
-    topics container.
-    Parameters:
-        topics (``int`` | ``list``):
-            Pass one or more topic ids to filter messages in specific topics.
-            Defaults to None (no topics).
-    """
-
-    def __init__(self, topics: Union[int, List[int]] = None):
-        topics = [] if topics is None else topics if isinstance(topics, list) else [topics]
-
-        super().__init__(
-            t for t in topics
-        )
-
     async def __call__(self, _, message: Message):
-        return message.topic and message.topic.id in self
+        return (message.chat
+                and (message.chat.id in self
+                     or (message.chat.username
+                         and message.chat.username.lower() in self)
+                     or ("me" in self
+                         and message.from_user
+                         and message.from_user.is_self
+                         and not message.outgoing)))
