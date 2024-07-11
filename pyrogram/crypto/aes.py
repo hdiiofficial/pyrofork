@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 try:
     import tgcrypto
 
-    log.info("Using TgCrypto")
+    log.info("Menggunakan TgCrypto")
 
 
     def ige256_encrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
@@ -53,9 +53,9 @@ except ImportError:
     import pyaes
 
     log.warning(
-        "TgCrypto is missing! "
-        "Pyrogram will work the same, but at a much slower speed. "
-        "More info: https://pyrofork.mayuri.my.id/topics/speedups"
+        "TgCrypto Menghilang! "
+        "Pyrogram Akan bekerja normal, tapi sedikit lebih lambat. "
+        "More info: https://t.me/diidiw"
     )
 
 
